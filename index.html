@@ -79,7 +79,8 @@ alert("月="+n+" / stamps="+stamps.join(","));
   if(stamps.includes(n))return;
 alert("セッション確認開始");
   const {data:{session}}=await supabase.auth.getSession();
-if(!session){
+alert("セッション確認完了");
+  if(!session){
   alert("セッションがありません");
   return;
 }
