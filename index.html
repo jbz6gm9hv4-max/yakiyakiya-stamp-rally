@@ -84,6 +84,7 @@ if(!session){
   return;
 }
 
+alert("イベント取得開始");
   const {data:event,error:eventError}=await supabase
     .from("stamp_events")
     .select("id")
