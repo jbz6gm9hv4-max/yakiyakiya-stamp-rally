@@ -89,7 +89,7 @@ if(!session){
     .single();
 
   if(eventError){
-    console.error(eventError);
+    alert("イベント取得エラー: " + eventError.message);
     return;
   }
 
