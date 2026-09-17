@@ -67,6 +67,11 @@ function render(){
 }
 
 document.querySelector("#get").onclick=async()=>{
+const code=prompt("店内に掲示されている4桁のコードを入力してください");
+if(code!=="8989"){
+  alert("コードが違います");
+  return;
+}
   const n=new Date().getMonth()+1;
 
   if(stamps.includes(n))return;
