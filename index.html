@@ -23,9 +23,88 @@
 <div class="note">※スタンプは1ヶ月につき1個まで。特典の利用条件は店舗の案内に従ってください。<br>※これは試作版です。本番ではデータベース、不正防止、管理画面、特典利用済み管理などを追加します。</div>
 </div><div id="modal"><div class="modalbox"><h2>12ヶ月コンプリート！</h2><div class="big">鉄板マスター</div><p>12ヶ月すべてのスタンプを集めました。</p><button onclick="this.closest('#modal').style.display='none'">閉じる</button></div></div>
 <script>
+const SUPABASE_URL="https://cvggmlpexmpfgwhzsupp.supabase.co";
+const SUPABASE_KEY="sb_publishable_8OG-IOXuUTjiHKa1gTjCgg_ha8bUjxH";
+
 const months=[["1月","鉄板初め"],["2月","バレンタイン"],["3月","春の乾杯"],["4月","新生活応援"],["5月","家族で鉄板"],["6月","雨の日割"],["7月","夏の鉄板祭"],["8月","納涼祭"],["9月","日本酒月間"],["10月","ハロウィン"],["11月","食欲の秋"],["12月","年末感謝祭"]];
-let stamps=JSON.parse(localStorage.getItem("yakiyakiyaStamps")||"[]");
-function render(){document.querySelector("#count").textContent=stamps.length;document.querySelector("#grid").innerHTML=months.map((m,i)=>`<div class="stamp ${stamps.includes(i+1)?"done":""}"><div class="m">${m[0]}</div><div class="e">${m[1]}</div><div class="check">${stamps.includes(i+1)?"✓":"○"}</div></div>`).join("");}
-document.querySelector("#get").onclick=()=>{let n=new Date().getMonth()+1;if(!stamps.includes(n)){stamps.push(n);localStorage.setItem("yakiyakiyaStamps",JSON.stringify(stamps));render();}if(stamps.length===12)document.querySelector("#modal").style.display="flex";};
-render();
+
+let supabase;
+let stamps=[];
+
+async function start(){
+  const s=document.createElement("script");
+  s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  document.head.appendChild(s);
+  await new Promise(resolve=>s.onload=resolve);
+
+  supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+  let {data:{session}}=await supabase.auth.getSession();
+
+  if(!session){
+    const {data,error}=await supabase.auth.signInAnonymously();
+    if(error){console.error(error);return;}
+    session=data.session;
+  }
+
+  const {data,error}=await supabase
+    .from("stamps")
+    .select("event_id,stamp_events(month_number)")
+    .eq("user_id",session.user.id);
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  stamps=(data||[]).map(x=>x.stamp_events?.month_number).filter(Boolean);
+  render();
+}
+
+function render(){
+  document.querySelector("#count").textContent=stamps.length;
+  document.querySelector("#grid").innerHTML=months.map((m,i)=>`<div class="stamp ${stamps.includes(i+1)?"done":""}"><div class="m">${m[0]}</div><div class="e">${m[1]}</div><div class="check">${stamps.includes(i+1)?"✓":"○"}</div></div>`).join("");
+}
+
+document.querySelector("#get").onclick=async()=>{
+  const n=new Date().getMonth()+1;
+
+  if(stamps.includes(n))return;
+
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session)return;
+
+  const {data:event,error:eventError}=await supabase
+    .from("stamp_events")
+    .select("id")
+    .eq("month_number",n)
+    .single();
+
+  if(eventError){
+    console.error(eventError);
+    return;
+  }
+
+  const {error}=await supabase
+    .from("stamps")
+    .insert({
+      user_id:session.user.id,
+      event_id:event.id,
+      stamped_at:new Date().toISOString()
+    });
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  stamps.push(n);
+  render();
+
+  if(stamps.length===12){
+    document.querySelector("#modal").style.display="flex";
+  }
+};
+
+start();
 </script></body></html>
