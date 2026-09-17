@@ -77,7 +77,7 @@ if(code!=="8989"){
   const n=new Date().getMonth()+1;
 alert("月="+n+" / stamps="+stamps.join(","));
   if(stamps.includes(n))return;
-
+alert("セッション確認開始");
   const {data:{session}}=await supabase.auth.getSession();
 if(!session){
   alert("セッションがありません");
