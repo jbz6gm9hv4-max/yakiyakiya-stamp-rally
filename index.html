@@ -39,14 +39,25 @@ async function start(){
 
   supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-  let {data:{session}}=await supabase.auth.getSession();
+      let session;
 
-  if(!session){
-    const {data,error}=await supabase.auth.signInAnonymously();
-    if(error){console.error(error);return;}
+  const {data:{user},error:userError}=await
+    supabase.auth.getUser();
+
+  if(user){
+    session={user};
+  }else{
+    const {data,error}=await
+      supabase.auth.signInAnonymously();
+
+    if(error){
+      alert("匿名ログインエラー: "+error.message);
+      console.error(error);
+      return;
+    }
+
     session=data.session;
   }
-
   const {data,error}=await supabase
     .from("stamps")
     .select("event_id,stamp_events(month_number)")
